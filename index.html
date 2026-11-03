@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kin of the Day · one species, and when you last shared an ancestor</title>
+<meta name="description" content="Every day one species from across the tree of life, drawn as its branch back to the ancestor it shares with you, dated by TimeTree.">
+<style>
+:root{color-scheme:light;--ground:#f3f1ea;--ink:#16202a;--ink-2:#4f5b66;--line:#d9d6cc;--f-ui:system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--ground:#0b0e0d;--ink:#e9eef2;--ink-2:#b0bcc6;--line:#2e3a39}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--f-ui);font-size:16px;line-height:1.45}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:24px;margin:4px 0 2px}
+.sub{color:var(--ink-2);margin:0 0 12px}
+nav{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+nav a,nav button{color:var(--ink);font:inherit;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;text-decoration:none;cursor:pointer}
+svg{width:100%;height:auto;display:block;border-radius:10px}
+h2{font-size:20px;margin:18px 0 6px}
+.big{font-size:19px}
+.note{color:var(--ink-2);font-size:14px}
+footer{color:var(--ink-2);font-size:13px;margin:24px 0}
+footer a{color:inherit}
+@media print{nav,footer{display:none}body{background:#fff}}
+</style>
+</head>
+<body>
+<main>
+<h1>Kin of the Day</h1>
+<p class="sub">One species a day, and how long ago its family line and yours were the same line.</p>
+<nav><a id="prev" href="#">← before</a><a id="today" href="./" hidden>today</a><a id="next" href="#">after →</a><button id="save" type="button">Save</button></nav>
+<svg id="art" role="img" aria-label="Today's species drawn as a branch rising from the moment it split from the human line"></svg>
+<section id="words" aria-live="polite"></section>
+<footer>
+Every faint line is one of the other species, rising from the moment it split from us; time runs up the page on a log scale.
+The tree and the names are the <a href="https://tree.opentreeoflife.org/">Open Tree of Life</a> synthetic tree; each age is the
+<a href="https://timetree.org/">TimeTree</a> median for that species and <i>Homo sapiens</i>. Species that meet us at the same
+ancestor get one age, the median of theirs, and a deeper split is never shown younger than a shallower one. Ages are estimates
+with wide intervals, more so the deeper they go. A new species every day, each once per cycle.
+</footer>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
