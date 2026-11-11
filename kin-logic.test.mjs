@@ -15,13 +15,16 @@ const keyAt = (i) => new Date(Date.UTC(2026, 10, 1) + i * 864e5).toISOString().s
 // --- the daily sequence -----------------------------------------------------------------
 ok(L.dayIndex(L.EPOCH) === 0 && L.dayIndex('2026-11-11') === 10 && L.dayIndex('2027-11-01') === 365, 'dayIndex counts days');
 ok(L.dayIndex('2027-03-15') - L.dayIndex('2027-03-13') === 2, 'dayIndex across the DST change');
-for (const c of [-1, 0, 1, 2, 7]) {
+// 61 and 67 are the first cycles whose deck opens on the previous cycle's last species, so
+// the swap runs there and nowhere in the first two years
+for (const c of [-1, 0, 1, 2, 7, 61, 67]) {
   const seen = new Set();
   for (let k = 0; k < N; k++) seen.add(L.pickIndex(N, keyAt(c * N + k)));
   ok(seen.size === N, `cycle ${c}: every species exactly once (${seen.size}/${N})`);
 }
 let runs = 0;
 for (let i = -N; i < 12 * N; i++) if (L.pickIndex(N, keyAt(i)) === L.pickIndex(N, keyAt(i + 1))) runs++;
+for (const c of [61, 67]) for (let i = c * N - 2; i < c * N + 2; i++) if (L.pickIndex(N, keyAt(i)) === L.pickIndex(N, keyAt(i + 1))) runs++;
 ok(runs === 0, `no species two days running, cycle boundaries included (${runs} repeats)`);
 // small decks collide at cycle boundaries often, so the swap and the pre-epoch days get exercised
 let small = 0, smallBoundary = 0;
@@ -30,6 +33,8 @@ for (let n = 2; n <= 9; n++) for (let i = -40 * n; i < 40 * n; i++) {
   if ((i + 1) % n === 0) smallBoundary++;
 }
 ok(small === 0 && smallBoundary > 100, `small decks: no repeats across ${smallBoundary} boundaries (${small} repeats)`);
+// from 3 up the deck is shuffled; only 2 alternates
+ok(new Set(Array.from({ length: 20 }, (_, c) => [0, 1, 2].map((k) => L.pickIndex(3, keyAt(3 * c + k))).join())).size > 1, 'a deck of 3 is shuffled, not cycled');
 const order = (c) => Array.from({ length: N }, (_, k) => L.pickIndex(N, keyAt(c * N + k))).join();
 ok(order(0) !== order(1) && order(1) !== order(2) && order(-1) !== order(0), 'each cycle has its own order');
 ok(new Set([0, 1, 2, 3, 4].map((i) => L.pickIndex(N, keyAt(i)))).size === 5, 'consecutive days differ');
@@ -91,6 +96,35 @@ const chimpDay = Array.from({ length: N }, (_, i) => keyAt(i)).find((k) => pool.
 ok(L.layout(pool, chimpDay).between.join() === 'Homo', 'chimp day: only Homo lies between us and the split');
 ok(L.layout(pool, chimpDay).ours.length === 0, 'chimp day: no dated split of ours is younger');
 ok(chimp.age === 6.5, 'chimp split 6.5 Mya');
+
+// --- served days stay served --------------------------------------------------------------
+// ?d= links are shareable, so a day already shown must draw the same species and picture
+// forever. These pin the live site (bytes checked 2026-11-11). A new pool or retune must
+// start on an unserved date and move the hash in the same commit, and a new pool.json needs a
+// day-gated file table first (which-way's SERIES_FILES), since pickIndex deals by pool size.
+const served = 'Pan troglodytes|Crocodylus niloticus|Amborella trichopoda|Dictyostelium discoideum|Calypte anna|Plasmodium falciparum|Pongo abelii|Aptenodytes forsteri|Nematostella vectensis|Hypsibius dujardini|Quercus alba';
+ok(Array.from({ length: 11 }, (_, i) => pool.species[L.pickIndex(N, keyAt(i))].sci).join('|') === served, 'served days 11-01..11-11 keep their species');
+const { createHash } = await import('node:crypto');
+const hh = createHash('sha256');
+for (let i = 0; i < 731; i++) hh.update(JSON.stringify(L.layout(pool, keyAt(i))));
+ok(hh.digest('hex') === 'a8d08d1348134e9dc9019cbcba4c62fef8e6f7dcddbb30cf9d1b766d80e56401', 'two years of drawings are unchanged (hash)');
+ok(L.hash('kin') === 1995950837 && L.rng(1)() === 0.6270739405881613, 'hash and rng are the shipped ones');
+ok(L.W === 1000 && L.H === 1250 && L.yOf(2000) === 1150, 'page size and the deepest line');
+// de Casteljau, an independent reading of the cubic
+const lerp = (a, b, t) => a.map((v, k) => v + (b[k] - v) * t);
+const casteljau = (p, t) => { let q = p; while (q.length > 1) q = q.slice(1).map((v, k) => lerp(q[k], v, t)); return q[0]; };
+const P = [[0, 0], [1, 2], [3, 5], [7, 11]];
+ok([0, 0.3, 0.5, 0.9, 1].every((t) => L.bez(P, t).every((v, k) => Math.abs(v - casteljau(P, t)[k]) < 1e-12)), 'bez matches de Casteljau');
+ok(L.dayKey(new Date(2026, 0, 5, 23, 59)) === '2026-01-05' && L.dayKey(new Date(2027, 10, 11)) === '2027-11-11', 'dayKey pads and is local');
+// every minute of Dec 31 against the platform's own 12-hour clock
+let clockBad = 0;
+for (let m = 0; m < 1440; m += 7) {
+  const mya = L.EARTH * (1 - (364 + (m + 0.5) / 1440) / 365);
+  const want = 'Dec 31, ' + new Date(Date.UTC(2025, 11, 31, 0, m)).toLocaleTimeString('en-US', { timeZone: 'UTC', hour: 'numeric', minute: '2-digit' }).replace('AM', 'am').replace('PM', 'pm');
+  if (L.earthDate(mya) !== want) { clockBad++; if (clockBad < 3) console.log('  ', m, L.earthDate(mya), want); }
+}
+ok(clockBad === 0, `Dec 31 reads the right clock time (${clockBad} off)`);
+ok(L.fmtAge(1000) === '1.00 billion years' && L.fmtAge(100) === '100 million years' && L.fmtAge(99.96) === '100.0 million years', 'fmtAge at its edges');
 
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
