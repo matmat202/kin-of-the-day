@@ -82,6 +82,15 @@ export function yOf(mya) {
   return TOP + (BOTTOM - TOP) * Math.log10(1 + mya) / Math.log10(1 + DEEPEST);
 }
 
+// On a phone the 1000-unit drawing is ~360 px wide, so a 12-unit label renders at 4 px.
+// Labels grow until the smallest (12 units) reads at MIN_PX on screen, at most 2.2 times;
+// at desktop widths the factor is 1 and the drawing is the printed one.
+export const MIN_PX = 9;
+export function textScale(px) {
+  if (!(px > 0)) return 1;
+  return Math.min(2.2, Math.max(1, (MIN_PX / 12) * W / px));
+}
+
 // The sentence's subject: the ancestor itself, or the clade it sits inside.
 export function ancestor(s) {
   return s.named ? `the first of the ${s.mrca}` : `an ancestor within the ${s.mrca}`;

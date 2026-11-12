@@ -126,5 +126,9 @@ for (let m = 0; m < 1440; m += 7) {
 ok(clockBad === 0, `Dec 31 reads the right clock time (${clockBad} off)`);
 ok(L.fmtAge(1000) === '1.00 billion years' && L.fmtAge(100) === '100 million years' && L.fmtAge(99.96) === '100.0 million years', 'fmtAge at its edges');
 
+ok(L.textScale(750) === 1 && L.textScale(1200) === 1, 'labels keep their size at desktop widths');
+ok(Math.abs(12 * L.textScale(358) * 358 / L.W - L.MIN_PX) < 1e-9, 'on a phone the smallest label reads at MIN_PX');
+ok(L.textScale(100) === 2.2 && L.textScale(0) === 1 && L.textScale(NaN) === 1, 'the growth is capped, and a hidden drawing is left alone');
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
