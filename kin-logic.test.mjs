@@ -130,5 +130,34 @@ ok(L.textScale(750) === 1 && L.textScale(1200) === 1, 'labels keep their size at
 ok(Math.abs(12 * L.textScale(358) * 358 / L.W - L.MIN_PX) < 1e-9, 'on a phone the smallest label reads at MIN_PX');
 ok(L.textScale(100) === 2.2 && L.textScale(0) === 1 && L.textScale(NaN) === 1, 'the growth is capped, and a hidden drawing is left alone');
 
+// --- naming a faint branch ---------------------------------------------------------------
+// the tap lands on the nearest branch, read against a dense, independent distance
+const dist = (b, x, y) => { let m = Infinity; for (let k = 0; k <= 400; k++) { const q = casteljau(b.p, k / 400); m = Math.min(m, Math.hypot(q[0] - x, q[1] - y)); } return m; };
+let tapBad = 0, tapN = 0, onLine = 0;
+for (const day of ['2026-11-03', '2026-11-13', '2027-02-01']) {
+  const g = L.layout(pool, day), r = L.rng(7);
+  for (let t = 0; t < 40; t++) {
+    const x = 40 + 920 * r(), y = 160 + 980 * r(), got = L.nearest(g, x, y, 60);
+    const others = g.branches.filter((b) => !b.today).map((b) => [b.i, dist(b, x, y)]).sort((a, b) => a[1] - b[1]);
+    tapN++;
+    // 48 chords per branch may misjudge a near-tie by a unit, never more
+    if (others[0][1] > 60 ? got !== -1 && dist(g.branches[got], x, y) > 61 : got === -1 || dist(g.branches[got], x, y) > others[0][1] + 1) tapBad++;
+  }
+  for (const b of g.branches) if (!b.today && L.nearest(g, ...L.bez(b.p, 44 / 48), 60) === b.i) onLine++;
+  ok(L.nearest(g, ...L.bez(g.branches[g.today].p, 44 / 48), 3) === -1, `${day}: a tap on today's own branch names no other`);
+  ok(L.nearest(g, 500, 1240, 60) === -1, `${day}: a tap in the empty margin names nothing`);
+}
+ok(tapBad === 0 && tapN === 120, `a tap names the nearest branch (${tapBad}/${tapN} wrong)`);
+ok(onLine === 3 * (N - 1), `a tap on a branch's own line names it (${onLine}/${3 * (N - 1)})`);
+ok(L.addDays('2027-03-13', 1) === '2027-03-14' && L.addDays('2026-12-31', 1) === '2027-01-01' && L.addDays('2026-11-01', -1) === '2026-10-31', 'addDays across DST, the year, and backwards');
+let dayBad = 0;
+for (const from of ['2026-11-13', '2027-01-30', keyAt(61 * N - 3)]) for (let i = 0; i < N; i++) {
+  const d = L.dayOf(N, i, from);
+  if (!d || d < from || L.pickIndex(N, d) !== i) { dayBad++; continue; }
+  for (let k = 0; L.addDays(from, k) < d; k++) if (L.pickIndex(N, L.addDays(from, k)) === i) { dayBad++; break; }
+}
+ok(dayBad === 0, `each species' next day is the first one that shows it (${dayBad} wrong)`);
+ok(L.dayOf(N, L.pickIndex(N, '2026-11-13'), '2026-11-13') === '2026-11-13', "today's species' day is today");
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

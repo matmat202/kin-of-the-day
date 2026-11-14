@@ -28,6 +28,8 @@ svg{width:100%;height:auto;display:block;border-radius:10px}
 h2{font-size:20px;margin:18px 0 6px}
 .big{font-size:19px}
 .note{color:var(--ink-2);font-size:14px}
+#pick{min-height:2.9em;margin:8px 2px 0}#pick b{color:var(--ink)}#pick a{color:var(--ink)}
+#art{cursor:crosshair;touch-action:manipulation}
 footer{color:var(--ink-2);font-size:13px;margin:24px 0}
 footer a{color:inherit}
 @media print{nav,footer{display:none}body{background:#fff}}
@@ -39,9 +41,10 @@ footer a{color:inherit}
 <p class="sub">One species a day, and how long ago its family line and yours were the same line.</p>
 <nav><a id="prev" href="#">← before</a><a id="today" href="./" hidden>today</a><a id="next" href="#">after →</a><button id="save" type="button">Save</button></nav>
 <svg id="art" role="img" aria-label="Today's species drawn as a branch rising from the moment it split from the human line"></svg>
+<p id="pick" class="note" aria-live="polite"></p>
 <section id="words" aria-live="polite"></section>
 <footer>
-Every faint line is one of the other species, rising from the moment it split from us; time runs up the page on a log scale.
+Every faint line is one of the other species, rising from the moment it split from us (tap one to name it); time runs up the page on a log scale.
 The tree and the names are the <a href="https://tree.opentreeoflife.org/">Open Tree of Life</a> synthetic tree; each age is the
 <a href="https://timetree.org/">TimeTree</a> median for that species and <i>Homo sapiens</i>. Species that meet us at the same
 ancestor get one age, the median of theirs, and a deeper split is never shown younger than a shallower one. Ages are estimates

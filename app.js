@@ -42,7 +42,7 @@ function draw(pool, key, k = 1) {
   // 'now' sits on whichever margin today's tip leaves free
   const tipX = g.branches[g.today].p[3][0], nowLeft = tipX > L.W * 0.3;
   el('text', { x: nowLeft ? 24 : L.W - 24, y: g.top - 14, fill: ink2, 'font-size': 15 * k, 'text-anchor': nowLeft ? 'start' : 'end', class: 'key' }, svg, 'now');
-  for (const b of g.branches) if (!b.today) el('path', { d: d(b.p), fill: 'none', stroke: faint, 'stroke-width': 1.4 }, svg);
+  for (const b of g.branches) if (!b.today) el('path', { d: d(b.p), fill: 'none', stroke: faint, 'stroke-width': 1.4, 'data-i': b.i }, svg);
   // our line: from today's split up to us
   el('line', { x1: g.cx, x2: g.cx, y1: g.split, y2: g.top, stroke: ink, 'stroke-width': 4, 'stroke-linecap': 'round' }, svg);
   el('line', { x1: g.cx, x2: g.cx, y1: g.bottom, y2: g.split, stroke: ink, 'stroke-width': 4, 'stroke-opacity': 0.35 }, svg);
@@ -65,6 +65,7 @@ function draw(pool, key, k = 1) {
     `You and the ${s.common}: ${L.fmtAge(s.age)}`));
   fit(el('text', { x: L.W / 2, y: L.H - 22, fill: ink2, 'font-size': 14 * k, 'text-anchor': 'middle' }, svg,
     `Kin of the Day · ${key} · ${pool.species.length} species, each split dated by TimeTree, the tree from Open Tree of Life`));
+  svg.dataset.ink = ink;
   return { g, s };
 }
 
@@ -83,9 +84,36 @@ function words(pool, key, g, s) {
     <p class="note">TimeTree median${esc(ci)}.</p>${raised}`;
 }
 
-function shift(key, n) {
-  const [y, m, dd] = key.split('-').map(Number);
-  return L.dayKey(new Date(y, m - 1, dd + n));
+const shift = L.addDays;
+
+// "Fri, Dec 4", read in UTC because the key is a date, not a moment
+const nice = (key) => new Date(key + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' });
+
+// A tap (or, with a mouse, a hover) on a faint line names its species and links to its day.
+// The pick lives outside the drawing, so Save and the redraws never carry it.
+function picker(pool, key, g) {  // g: the day's layout, which the redraws never change
+  const svg = $('art'), out = $('pick');
+  let on = -1;
+  const show = (i) => {
+    for (const p of svg.querySelectorAll('path.picked')) { p.classList.remove('picked'); p.removeAttribute('style'); }
+    on = i;
+    if (i < 0) { out.innerHTML = 'Tap any faint line to see which species it is.'; return; }
+    const p = svg.querySelector(`path[data-i="${i}"]`);
+    // in ink, not today's colour, and lifted above the other faint lines (still under ours)
+    if (p) { p.classList.add('picked'); p.style.stroke = svg.dataset.ink; p.style.strokeWidth = 2.5; svg.insertBefore(p, svg.querySelector('line[stroke-width="4"]')); }
+    const s = pool.species[i], today = L.dayKey(), day = L.dayOf(pool.species.length, i, today);
+    const when = day === today ? 'today' : nice(day);
+    out.innerHTML = `<b>${esc(s.common)}</b> <i>${esc(s.sci)}</i>: you last shared an ancestor ${L.fmtAge(s.age)} ago. `
+      + (day === key ? `This page is its day.` : `<a href="?d=${day}">Its day: ${when} →</a>`);
+  };
+  const at = (e) => {
+    const r = svg.getBoundingClientRect(), u = L.W / r.width;
+    return L.nearest(g, (e.clientX - r.left) * u, (e.clientY - r.top) * u, 22 * u);
+  };
+  svg.addEventListener('click', (e) => show(at(e)));
+  svg.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { const i = at(e); if (i !== on) show(i); } });
+  show(-1);
+  return () => { if (on >= 0) show(on); };  // after a redraw, mark the pick again
 }
 
 async function main() {
@@ -96,18 +124,20 @@ async function main() {
   let k = scale();
   const { g, s } = draw(pool, key, k);
   words(pool, key, g, s);
+  const remark = picker(pool, key, g);
   // the words can bring a scrollbar, which narrows the drawing after its first draw
-  if (Math.abs(scale() - k) > 0.01) draw(pool, key, (k = scale()));
+  if (Math.abs(scale() - k) > 0.01) draw(pool, key, (k = scale())), remark();
   $('prev').href = `?d=${shift(key, -1)}`;
   $('next').href = `?d=${shift(key, 1)}`;
   $('today').hidden = key === L.dayKey();
   // a phone turned sideways, or a window resized, redraws at the new label size
   // (watching the drawing, not the window: a scrollbar appearing narrows it too)
-  new ResizeObserver(() => { const n = scale(); if (Math.abs(n - k) > 0.01) draw(pool, key, (k = n)); }).observe($('art'));
+  new ResizeObserver(() => { const n = scale(); if (Math.abs(n - k) > 0.01) draw(pool, key, (k = n)), remark(); }).observe($('art'));
   $('save').onclick = () => {
     draw(pool, key, 1);
     const blob = new Blob([new XMLSerializer().serializeToString($('art'))], { type: 'image/svg+xml' });
     draw(pool, key, k);
+    remark();
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `kin-${key}.svg` });
     a.click();
   };

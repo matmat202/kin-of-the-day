@@ -132,3 +132,36 @@ export function layout(pool, key) {
   const between = pool.ours.filter((o) => o.depth < s.depth).map((o) => o.name);
   return { today, hue, cx, top: TOP, bottom: BOTTOM, split: yOf(s.age), branches, clades, ours, between };
 }
+
+// YYYY-MM-DD plus n days, counted in UTC so a DST change cannot skip or repeat a day.
+export function addDays(key, n) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+// The faint branch a tap at (x, y), in drawing units, lands on: the nearest within reach,
+// or -1. Today's branch is skipped; the words already name it.
+export function nearest(g, x, y, reach) {
+  let best = -1, bd = reach * reach;
+  for (const b of g.branches) {
+    if (b.today) continue;
+    // to the chords between 49 points on the curve, not to the points: on the long
+    // sideways sweeps the points sit 40 units apart
+    let a = bez(b.p, 0);
+    for (let k = 1; k <= 48; k++) {
+      const c = bez(b.p, k / 48), vx = c[0] - a[0], vy = c[1] - a[1];
+      const t = Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / (vx * vx + vy * vy || 1)));
+      const dd = (a[0] + t * vx - x) ** 2 + (a[1] + t * vy - y) ** 2;
+      if (dd < bd) { bd = dd; best = b.i; }
+      a = c;
+    }
+  }
+  return best;
+}
+
+// The first day on or after `from` that shows species i. Every cycle shows it once, so two
+// cycles always hold one.
+export function dayOf(n, i, from) {
+  for (let k = 0; k <= 2 * n; k++) { const key = addDays(from, k); if (pickIndex(n, key) === i) return key; }
+  return null;
+}
