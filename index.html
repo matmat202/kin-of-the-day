@@ -30,6 +30,12 @@ h2{font-size:20px;margin:18px 0 6px}
 .note{color:var(--ink-2);font-size:14px}
 #pick{min-height:2.9em;margin:8px 2px 0}#pick b{color:var(--ink)}#pick a{color:var(--ink)}
 #art{cursor:crosshair;touch-action:manipulation}
+#look{float:right;width:min(42%,220px);margin:4px 0 10px 16px}
+#look img{display:block;width:100%;height:auto;max-height:280px;object-fit:contain;border-radius:8px;background:var(--line)}
+#look figcaption{color:var(--ink-2);font-size:12px;line-height:1.35;margin-top:4px;overflow-wrap:anywhere}
+#look a,#words .note a{color:inherit}
+#words::after{content:"";display:block;clear:both}
+@media (max-width:520px){#look{float:none;width:auto;margin:4px 0 12px}#look img{max-height:240px}}
 footer{color:var(--ink-2);font-size:13px;margin:24px 0}
 footer a{color:inherit}
 @media print{nav,footer{display:none}body{background:#fff}}

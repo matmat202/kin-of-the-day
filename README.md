@@ -13,5 +13,10 @@ where the Earth forms on January 1.
   Where TimeTree's pairs contradict the tree (human–jellyfish 682 Mya, human–fly 721),
   the deeper split is raised to stay consistent, and the page says so on those days.
 
+- Pictures and links: each species' [Wikipedia](https://en.wikipedia.org/) article and its
+  lead picture from [Wikimedia Commons](https://commons.wikimedia.org/), shown only under a
+  free licence (public domain, CC0, CC BY, CC BY-SA) and credited with author and licence
+  on the page. Three species whose picture is GFDL get the link alone.
+
 `?d=YYYY-MM-DD` shows any day; "Save" downloads the SVG. `node kin-logic.test.mjs` runs
 the logic suite. Built with Claude Code.

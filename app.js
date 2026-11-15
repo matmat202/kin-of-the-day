@@ -77,11 +77,28 @@ function words(pool, key, g, s) {
   const ci = s.ci ? ` (95% interval ${Math.round(s.ci[0])}–${Math.round(s.ci[1])} Mya, from ${s.studies} studies)` : '';
   $('words').innerHTML = `
     <h2>The ${esc(s.common)} <i>${esc(s.sci)}</i></h2>
-    <p class="big">You last shared an ancestor <b>${L.fmtAge(s.age)} ago</b>: ${esc(L.ancestor(s))}.</p>
+    <p class="big">You last shared an ancestor <b>${L.fmtAge(s.age)} ago</b>: ${esc(L.ancestor(s))}.</p>${look(s)}
     <p>If the Earth's 4.54 billion years were one calendar year, that ancestor lived on <b>${L.earthDate(s.age)}</b>.</p>
     <p><b>Its line since then</b>: ${esc(theirs)}.</p>
     ${between ? `<p><b>Yours</b>: ${esc(between)} → you.</p>` : ''}
     <p class="note">TimeTree median${esc(ci)}.</p>${raised}`;
+}
+
+// What it looks like: Wikipedia's lead picture (free licences only, build.py) with its
+// credit, and the article. A species with no article of its own links where its genus's
+// name leads (Paramecium; Monosiga redirects to all choanoflagellates), and says so.
+function look(s) {
+  const w = s.wiki;
+  if (!w) return '';
+  const read = w.genus
+    ? `<i>${esc(s.sci)}</i> has no article of its own: <a id="wiki" href="${esc(w.page)}">read about ${esc(w.title)} on Wikipedia →</a>`
+    : `<a id="wiki" href="${esc(w.page)}">Read about the ${esc(s.common)} on Wikipedia →</a>`;
+  const im = w.img;
+  if (!im) return `<p class="note">${read}</p>`;
+  const by = im.artist ? `${esc(im.artist.length > 80 ? im.artist.slice(0, 79) + '…' : im.artist)}, ` : '';
+  const lic = im.license_url ? `<a href="${esc(im.license_url)}">${esc(im.license)}</a>` : esc(im.license);
+  return `<figure id="look"><img src="${esc(im.src)}" width="${im.w}" height="${im.h}" alt="The ${esc(s.common)}" referrerpolicy="no-referrer">
+    <figcaption>Photo: ${by}${lic}, via <a href="${esc(im.filepage)}">Wikimedia Commons</a>. ${read}</figcaption></figure>`;
 }
 
 const shift = L.addDays;
