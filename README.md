@@ -18,5 +18,11 @@ where the Earth forms on January 1.
   free licence (public domain, CC0, CC BY, CC BY-SA) and credited with author and licence
   on the page. Three species whose picture is GFDL get the link alone.
 
+**[/story/](https://matmat202.github.io/kin-of-the-day/story/)**, "Sure of the order": all 100 on the
+Earth's calendar (none before September, 40 in December), TimeTree's ranges as the control
+(46 of 100 could fall in another month), and the 6% of pairs only the tree can order.
+`python3 build_story.py` rebuilds it; `node test/story.test.mjs [--control]` and
+`test/run-story.sh [--control]` gate it.
+
 `?d=YYYY-MM-DD` shows any day; "Save" downloads the SVG. `node kin-logic.test.mjs` runs
 the logic suite. Built with Claude Code.
