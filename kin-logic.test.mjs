@@ -159,5 +159,20 @@ for (const from of ['2026-11-13', '2027-01-30', keyAt(61 * N - 3)]) for (let i =
 ok(dayBad === 0, `each species' next day is the first one that shows it (${dayBad} wrong)`);
 ok(L.dayOf(N, L.pickIndex(N, '2026-11-13'), '2026-11-13') === '2026-11-13', "today's species' day is today");
 
+// --- the finder: all 100, A to Z, each with the first day from `from` that shows it -----
+let findBad = 0, findOrder = 0;
+for (const from of ['2026-11-13', '2027-01-30', keyAt(61 * N - 3)]) {
+  const f = L.finder(pool.species, from);
+  if (f.length !== N || new Set(f.map((r) => r.i)).size !== N) findBad++;
+  for (const r of f) if (r.name !== pool.species[r.i].common || r.day !== L.dayOf(N, r.i, from)) findBad++;
+  // case-folded code points, not localeCompare: the check must not share the page's comparator
+  for (let k = 1; k < f.length; k++) if (f[k - 1].name.toLowerCase() > f[k].name.toLowerCase()) findOrder++;
+}
+ok(findBad === 0, `the finder lists every species once, each at its next day (${findBad} wrong)`);
+ok(findOrder === 0, `the finder runs A to Z, capitals or not (${findOrder} out of order)`);
+const f0 = L.finder(pool.species, '2026-11-13');
+ok(f0.slice(0, 3).map((r) => r.name).join() === 'African bush elephant,Amborella,American cockroach', `the finder opens A to Z (${f0.slice(0, 3).map((r) => r.name)})`);
+ok(f0.find((r) => r.i === L.pickIndex(N, '2026-11-13')).day === '2026-11-13', "the finder gives today's species today");
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

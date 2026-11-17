@@ -133,6 +133,19 @@ function picker(pool, key, g) {  // g: the day's layout, which the redraws never
   return () => { if (on >= 0) show(on); };  // after a redraw, mark the pick again
 }
 
+// Look a species up by name: every one A to Z, each with the first day from today that shows
+// it, and choosing one goes there. Days count from today, like the tap's link, not this page.
+function finder(pool, key) {
+  const sel = $('find'), today = L.dayKey(), mine = L.pickIndex(pool.species.length, key);
+  for (const r of L.finder(pool.species, today)) {
+    // this page's own species stays put: its entry says so, and choosing it goes nowhere
+    const here = r.i === mine, o = new Option(`${r.name} · ${here ? 'this page' : r.day === today ? 'today' : nice(r.day)}`, here ? key : r.day);
+    o.dataset.i = r.i;
+    sel.add(o);
+  }
+  sel.addEventListener('change', () => { if (sel.value && sel.value !== key) location.href = `?d=${sel.value}`; });
+}
+
 async function main() {
   const pool = await (await fetch('data/pool.json')).json();
   const q = new URLSearchParams(location.search).get('d');
@@ -142,6 +155,7 @@ async function main() {
   const { g, s } = draw(pool, key, k);
   words(pool, key, g, s);
   const remark = picker(pool, key, g);
+  finder(pool, key);
   // the words can bring a scrollbar, which narrows the drawing after its first draw
   if (Math.abs(scale() - k) > 0.01) draw(pool, key, (k = scale())), remark();
   $('prev').href = `?d=${shift(key, -1)}`;

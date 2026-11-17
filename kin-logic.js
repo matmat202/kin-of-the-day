@@ -165,3 +165,15 @@ export function dayOf(n, i, from) {
   for (let k = 0; k <= 2 * n; k++) { const key = addDays(from, k); if (pickIndex(n, key) === i) return key; }
   return null;
 }
+
+// The finder: every species A to Z by common name, each with the first day on or after
+// `from` that shows it. One walk over two cycles, not dayOf per species (100x the shuffles).
+export function finder(species, from) {
+  const n = species.length, day = new Array(n).fill(null);
+  for (let k = 0, left = n; k <= 2 * n && left; k++) {
+    const key = addDays(from, k), i = pickIndex(n, key);
+    if (day[i] === null) { day[i] = key; left--; }
+  }
+  return species.map((s, i) => ({ i, name: s.common, day: day[i] }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'en') || a.i - b.i);
+}

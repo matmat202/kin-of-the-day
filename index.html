@@ -29,6 +29,8 @@ h2{font-size:20px;margin:18px 0 6px}
 .big{font-size:19px}
 .note{color:var(--ink-2);font-size:14px}
 #pick{min-height:2.9em;margin:8px 2px 0}#pick b{color:var(--ink)}#pick a{color:var(--ink)}
+#findrow{margin:6px 2px 0;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+#find{color:var(--ink);background:var(--ground);font:inherit;font-size:16px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:100%;min-width:0;flex:1 1 220px}
 #art{cursor:crosshair;touch-action:manipulation}
 #look{float:right;width:min(42%,220px);margin:4px 0 10px 16px}
 #look img{display:block;width:100%;height:auto;max-height:280px;object-fit:contain;border-radius:8px;background:var(--line)}
@@ -38,7 +40,7 @@ h2{font-size:20px;margin:18px 0 6px}
 @media (max-width:520px){#look{float:none;width:auto;margin:4px 0 12px}#look img{max-height:240px}}
 footer{color:var(--ink-2);font-size:13px;margin:24px 0}
 footer a{color:inherit}
-@media print{nav,footer{display:none}body{background:#fff}}
+@media print{nav,footer,#findrow{display:none}body{background:#fff}}
 </style>
 </head>
 <body>
@@ -48,6 +50,7 @@ footer a{color:inherit}
 <nav><a id="prev" href="#">← before</a><a id="today" href="./" hidden>today</a><a id="next" href="#">after →</a><button id="save" type="button">Save</button></nav>
 <svg id="art" role="img" aria-label="Today's species drawn as a branch rising from the moment it split from the human line"></svg>
 <p id="pick" class="note" aria-live="polite"></p>
+<p id="findrow"><label for="find" class="note">Or look one up:</label> <select id="find"><option value="">Find a species (all 100, A to Z)</option></select></p>
 <section id="words" aria-live="polite"></section>
 <footer>
 Every faint line is one of the other species, rising from the moment it split from us (tap one to name it); time runs up the page on a log scale.
