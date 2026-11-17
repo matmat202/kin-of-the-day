@@ -38,6 +38,12 @@ h2{font-size:20px;margin:18px 0 6px}
 #look a,#words .note a{color:inherit}
 #words::after{content:"";display:block;clear:both}
 @media (max-width:520px){#look{float:none;width:auto;margin:4px 0 12px}#look img{max-height:240px}}
+/* On a phone the finder gets the whole row, label above. Without this the label shares the
+   line and the select is NARROWER at 390px (233px) than at 320px (267px), where the label
+   wraps of its own accord -- so the longest option fits the smaller screen and not the
+   larger one. app.js drops each option's day when the box cannot hold it. */
+@media (max-width:480px){#findrow{display:block}#findrow label{display:block}#find{width:100%;margin-top:4px}}
+
 footer{color:var(--ink-2);font-size:13px;margin:24px 0}
 footer a{color:inherit}
 @media print{nav,footer,#findrow{display:none}body{background:#fff}}

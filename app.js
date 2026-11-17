@@ -105,6 +105,10 @@ const shift = L.addDays;
 
 // "Fri, Dec 4", read in UTC because the key is a date, not a moment
 const nice = (key) => new Date(key + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' });
+// The finder's own, shorter: 100 options have to fit a 320px phone beside a 29-character
+// common name ("sleeping-sickness trypanosome"), and the weekday costs 34 of the 73px that
+// put the longest option past the box. The prose above the chart keeps the weekday.
+const niceShort = (key) => new Date(key + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
 
 // A tap (or, with a mouse, a hover) on a faint line names its species and links to its day.
 // The pick lives outside the drawing, so Save and the redraws never carry it.
@@ -137,12 +141,56 @@ function picker(pool, key, g) {  // g: the day's layout, which the redraws never
 // it, and choosing one goes there. Days count from today, like the tap's link, not this page.
 function finder(pool, key) {
   const sel = $('find'), today = L.dayKey(), mine = L.pickIndex(pool.species.length, key);
-  for (const r of L.finder(pool.species, today)) {
+  // A closed <select> cuts an option too wide for it with no sign, and the widest option is
+  // a pick away rather than on screen, so nobody sees it until they open the list. The
+  // longest common name here ("sleeping-sickness trypanosome") is 222px at 16px, and its
+  // day costs another 61px, which does not fit a 320px phone. Shrinking the text is not
+  // available: bin/audit refuses a form control under 16px, because iPhone Safari zooms
+  // into one on tap. So on a narrow screen the day is dropped and the name kept.
+  //
+  // MEASURED, not a breakpoint. A width chosen by hand would be right for today's hundred
+  // names and wrong for the next one added, and it would sit in the gap between the two
+  // gates that watch this (narrow-reflow at 320 and 360, the phone shot at 390) rather than
+  // where the text actually stops fitting. This asks the box.
+  const rows = L.finder(pool.species, today);
+  for (const r of rows) {
     // this page's own species stays put: its entry says so, and choosing it goes nowhere
-    const here = r.i === mine, o = new Option(`${r.name} · ${here ? 'this page' : r.day === today ? 'today' : nice(r.day)}`, here ? key : r.day);
+    const here = r.i === mine, o = new Option('', here ? key : r.day);
     o.dataset.i = r.i;
+    o.dataset.name = r.name;
+    o.dataset.suffix = here ? 'this page' : r.day === today ? 'today' : niceShort(r.day);
     sel.add(o);
   }
+  const ruler = document.createElement('canvas').getContext('2d');
+  // The widest the list can ever be, not the widest it happens to be today: the longest
+  // name crossed with the widest month-and-day the calendar can make. Otherwise the layout
+  // would change under a visitor as the dates roll on, and a gate would pass in November
+  // and fail in May.
+  const widest = (full) => {
+    const cs = getComputedStyle(sel);
+    ruler.font = [cs.fontStyle, cs.fontVariant, cs.fontWeight, cs.fontSize + '/' + cs.lineHeight, cs.fontFamily].join(' ');
+    let w = 0;
+    for (const o of sel.options) {
+      const name = o.dataset.name;
+      if (!name) continue;
+      if (!full) { w = Math.max(w, ruler.measureText(name).width); continue; }
+      for (const tail of [o.dataset.suffix, 'May 28'])
+        w = Math.max(w, ruler.measureText(`${name} · ${tail}`).width);
+    }
+    return w;
+  };
+  const relabel = () => {
+    const cs = getComputedStyle(sel);
+    // the dropdown arrow eats room the padding does not describe; 16px on this engine
+    const box = sel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 16;
+    const full = widest(true) <= box - 4;
+    for (const o of sel.options) {
+      if (!o.dataset.name) continue;
+      o.textContent = full ? `${o.dataset.name} · ${o.dataset.suffix}` : o.dataset.name;
+    }
+  };
+  relabel();
+  addEventListener('resize', relabel);
   sel.addEventListener('change', () => { if (sel.value && sel.value !== key) location.href = `?d=${sel.value}`; });
 }
 
