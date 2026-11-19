@@ -129,6 +129,8 @@ ok(L.fmtAge(1000) === '1.00 billion years' && L.fmtAge(100) === '100 million yea
 ok(L.textScale(750) === 1 && L.textScale(1200) === 1, 'labels keep their size at desktop widths');
 ok(Math.abs(12 * L.textScale(358) * 358 / L.W - L.MIN_PX) < 1e-9, 'on a phone the smallest label reads at MIN_PX');
 ok(L.textScale(100) === 2.2 && L.textScale(0) === 1 && L.textScale(NaN) === 1, 'the growth is capped, and a hidden drawing is left alone');
+// the guard is on px > 0, not px > 1: a sliver-wide drawing is still a drawing, and capped
+ok(L.textScale(1) === 2.2 && L.textScale(0.5) === 2.2 && L.textScale(1e-9) === 2.2, 'a drawing under a pixel wide is scaled, not left alone');
 
 // --- naming a faint branch ---------------------------------------------------------------
 // the tap lands on the nearest branch, read against a dense, independent distance
@@ -149,6 +151,22 @@ for (const day of ['2026-11-03', '2026-11-13', '2027-02-01']) {
 }
 ok(tapBad === 0 && tapN === 120, `a tap names the nearest branch (${tapBad}/${tapN} wrong)`);
 ok(onLine === 3 * (N - 1), `a tap on a branch's own line names it (${onLine}/${3 * (N - 1)})`);
+// --- the edges of a branch: its tip, just past it, the first sample point, and a tie --------
+// A synthetic trio in the real shape (flat tangent at the split, a sideways sweep, a vertical
+// finish at the tip), because the pool's own layout never lands a tap EXACTLY on a sample
+// point, exactly on a tip, just past one, or at equal distance from two branches -- so the
+// chord loop's two bounds, its clamp and its tie-break had no case that could reach them.
+const synth = (x1, i) => ({ i, today: false, p: [[500, 1000], [500 + (x1 - 500) * 0.35, 1000], [x1, 1000 + (150 - 1000) * 0.65], [x1, 150]] });
+const gs = { branches: [synth(120, 0), synth(880, 1), synth(300, 2)] };
+let curveBad = 0;
+for (const b of gs.branches) for (let k = 1; k <= 48; k++) if (L.nearest(gs, ...L.bez(b.p, k / 48), 0.05) !== b.i) curveBad++;
+ok(curveBad === 0, `a tap on any of the 48 sample points names that branch (${curveBad}/${3 * 48} missed)`);
+ok(L.nearest(gs, 120, 150, 1) === 0, 'a tap exactly on a tip names its branch');
+ok(L.nearest(gs, 120, 145, 3) === -1, 'a tap 5 units past the tip, out of reach, names nothing');
+// every branch leaves our line at its own split, so two species of the same age start at the
+// same point -- a tap there is exactly equidistant from all three and must name the first
+ok(L.nearest(gs, 500, 1000, 5) === 0, 'branches at equal distance: the first wins, not the last');
+
 ok(L.addDays('2027-03-13', 1) === '2027-03-14' && L.addDays('2026-12-31', 1) === '2027-01-01' && L.addDays('2026-11-01', -1) === '2026-10-31', 'addDays across DST, the year, and backwards');
 let dayBad = 0;
 for (const from of ['2026-11-13', '2027-01-30', keyAt(61 * N - 3)]) for (let i = 0; i < N; i++) {
