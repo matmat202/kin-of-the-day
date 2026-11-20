@@ -13,6 +13,7 @@ function el(name, attrs, parent, text) {
   return e;
 }
 
+const FONT = 'system-ui,-apple-system,"Segoe UI",sans-serif';
 const d = (p) => `M${p[0]} C${p[1]} ${p[2]} ${p[3]}`;
 
 // Shrink a line of the drawing's text until it fits across the drawing.
@@ -32,6 +33,8 @@ function draw(pool, key, k = 1) {
   const svg = $('art');
   svg.replaceChildren();
   svg.setAttribute('viewBox', `0 0 ${L.W} ${L.H}`);
+  // the page's font, written on the drawing itself: a saved copy has no page around it
+  svg.setAttribute('font-family', FONT);
   el('rect', { width: L.W, height: L.H, fill: bg }, svg);
   // the time axis, a few round ages, on the left margin
   for (const a of [1, 10, 100, 500, 1000, 2000]) {
@@ -194,6 +197,23 @@ function finder(pool, key) {
   sel.addEventListener('change', () => { if (sel.value && sel.value !== key) location.href = `?d=${sel.value}`; });
 }
 
+// Save is a PNG, not the SVG: neither Photos on an iPhone nor an Android gallery opens an
+// SVG, so on a phone the old download was a file nothing would show. SCALE x the drawing
+// (3000 x 3750) still prints sharp at A4.
+const SCALE = 3;
+async function toPng(svg) {
+  svg.setAttribute('width', L.W); svg.setAttribute('height', L.H);
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' }));
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const c = Object.assign(document.createElement('canvas'), { width: L.W * SCALE, height: L.H * SCALE });
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('no PNG'))), 'image/png'));
+  } finally { URL.revokeObjectURL(url); }
+}
+
 async function main() {
   const pool = await (await fetch('data/pool.json')).json();
   const q = new URLSearchParams(location.search).get('d');
@@ -212,12 +232,19 @@ async function main() {
   // a phone turned sideways, or a window resized, redraws at the new label size
   // (watching the drawing, not the window: a scrollbar appearing narrows it too)
   new ResizeObserver(() => { const n = scale(); if (Math.abs(n - k) > 0.01) draw(pool, key, (k = n)), remark(); }).observe($('art'));
-  $('save').onclick = () => {
+  $('save').onclick = async () => {
     draw(pool, key, 1);
-    const blob = new Blob([new XMLSerializer().serializeToString($('art'))], { type: 'image/svg+xml' });
+    const svg = $('art').cloneNode(true);
     draw(pool, key, k);
     remark();
-    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `kin-${key}.svg` });
+    const png = await toPng(svg);
+    const file = new File([png], `kin-${key}.png`, { type: png.type });
+    // a phone keeps a picture through its share sheet ("Save Image"); a desktop downloads it
+    if (matchMedia('(pointer: coarse)').matches && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: `You and the ${s.common}` }); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
+    }
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(file), download: file.name });
     a.click();
   };
   document.body.dataset.ready = key;

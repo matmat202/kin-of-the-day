@@ -24,5 +24,5 @@ Earth's calendar (none before September, 40 in December), TimeTree's ranges as t
 `python3 build_story.py` rebuilds it; `node test/story.test.mjs [--control]` and
 `test/run-story.sh [--control]` gate it.
 
-`?d=YYYY-MM-DD` shows any day; "Save" downloads the SVG. `node kin-logic.test.mjs` runs
+`?d=YYYY-MM-DD` shows any day; "Save" makes a PNG of the drawing (the share sheet on a phone, a download elsewhere). `node kin-logic.test.mjs` runs
 the logic suite. Built with Claude Code.
